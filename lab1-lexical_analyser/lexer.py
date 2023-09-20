@@ -1,7 +1,7 @@
 import sys
 
-from states import *
-from utils import *
+from states import *    # 状态常量
+from utils import *     # 记号表
 
 class LexicalAnalyzer:
     def __init__(self, input, output):
@@ -31,25 +31,30 @@ class LexicalAnalyzer:
             elif self.state == UNDERLINE or self.state == LETTER: # 标识符状态
                 self.token += self.ch
                 self.read_char()
-                if self.ch != '_' and not self.ch.isdigit() and not self.ch.isalpha():
+                if self.ch == '_' or self.ch.isdigit() or self.ch.isalpha():
+                    self.state = LETTER # 还是标识符状态
+                else:
                     if self.token in KW_table: # 查关键字表
                         self.write_token(KW) # 关键字
                     else:
                         self.write_token(ID) # 标识符
+            elif self.state == DIGIT: # 数字状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch.isdigit():
+                    self.state = DIGIT # 还是数字状态
+                elif self.ch == '.':
+                    self.state = DOT
+                elif self.state == 'E':
+                    self.state = SCI
                 else:
-                    self.state = LETTER # 还是标识符状态
-            else:
-                break
-            # elif self.state == DIGIT: # 数字常数状态
-            #     self.token += self.ch
-            #     self.read_char()
-            #     # TODO
-            # elif self.state == DOT: # 句点状态
-            #     self.token += self.ch
-            #     self.read_char()
+                    self.write_token(CS) # 常量（整数）
+            elif self.state == DOT: # 句点状态
+                self.token += self.ch
+                self.read_char()
 
     def read_char(self):
-        """每调用一次，返回forward指向的buffer中的字符，并把它放入变量C中，然后，移动forward，使之指向下一个字符"""
+        """每调用一次，返回forward指向的buffer中的字符，并把它放入变量ch中，然后，移动forward，使之指向下一个字符"""
         if self.buffer == '':
             self.buffer += self.fin.read(1)
             if self.buffer == '': # 读到文件末尾，结束词法分析程序
@@ -61,12 +66,12 @@ class LexicalAnalyzer:
         return self.ch
 
     def read_white(self):
-        """检查ch中的字符是否为空格，若是，则反复调用get_char()，直到ch中进入一个非空字符为止"""
+        """检查ch中的字符是否为空格，若是，则反复调用read_char()，直到ch中进入一个非空字符为止"""
         while self.ch.isspace():
             self.read_char()
-    
+
     def write_token(self, token_type):
-        """将识别出来的单词记号返回给程序，并刷新token，进入下一轮分析"""
+        """将识别出来的单词记号写入输出，并刷新token，进入下一轮分析"""
         self.fout.write("<{0}, {1}>\n".format(token_type, self.token))
         self.token = ''
         self.buffer = self.buffer[-1:]
