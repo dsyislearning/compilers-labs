@@ -28,6 +28,8 @@ class LexicalAnalyzer:
                     self.state = LETTER
                 elif self.ch.isdigit():
                     self.state = DIGIT
+                # elif self.ch == '\'':
+                #     self.state = CHAR
             elif self.state == UNDERLINE or self.state == LETTER: # 标识符状态
                 self.token += self.ch
                 self.read_char()
@@ -45,13 +47,41 @@ class LexicalAnalyzer:
                     self.state = DIGIT # 还是数字状态
                 elif self.ch == '.':
                     self.state = DOT
-                elif self.state == 'E':
-                    self.state = SCI
                 else:
                     self.write_token(CS) # 常量（整数）
-            elif self.state == DOT: # 句点状态
+            elif self.state == DOT: # 小数点状态
                 self.token += self.ch
                 self.read_char()
+                if self.ch.isdigit():
+                    self.state = DECIMAL # 小数部分状态
+                else:
+                    self.handle_errors()
+            elif self.state == DECIMAL: # 小数部分状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch.isdigit():
+                    self.state = DECIMAL
+                elif self.ch == 'E' or self.ch == 'e':
+                    self.state = SCI
+                else:
+                    self.write_token(CS) # 常量（浮点数）
+            elif self.state == SCI: # 科学记数法状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch.isdigit() or self.ch == '+' or self.ch == '-':
+                    self.state = EXP # 指数部分
+                else:
+                    self.handle_errors()
+            elif self.state == EXP: # 科学记数法指数部分
+                self.token += self.ch
+                self.read_char()
+                if self.ch.isdigit():
+                    self.state = EXP
+                else:
+                    self.write_token(CS) # 常量（科学记数法）
+            else:
+                break
+                
 
     def read_char(self):
         """每调用一次，返回forward指向的buffer中的字符，并把它放入变量ch中，然后，移动forward，使之指向下一个字符"""
@@ -75,6 +105,11 @@ class LexicalAnalyzer:
         self.fout.write("<{0}, {1}>\n".format(token_type, self.token))
         self.token = ''
         self.buffer = self.buffer[-1:]
+        self.state = INIT
+
+    def handle_errors(self):
+        """对发现的词法错误进行相应的处理"""
+        # TODO
         self.state = INIT
 
 
