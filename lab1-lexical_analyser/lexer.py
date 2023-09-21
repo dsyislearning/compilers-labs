@@ -22,7 +22,7 @@ class LexicalAnalyzer:
         # 状态机逻辑
         while True:
             if self.state == INIT: # 初始状态
-                self.log()
+                # self.log()
                 self.read_char()
                 self.read_white()
                 if self.ch == '_':
@@ -39,6 +39,14 @@ class LexicalAnalyzer:
                     self.state = LT
                 elif self.ch == '>':
                     self.state = GT
+                elif self.ch == '+':
+                    self.state = ADD
+                elif self.ch == '-':
+                    self.state = SUB
+                # elif self.ch == '*':
+                #     self.state = STAR
+                # elif self.ch == '&':
+                #     self.state = AMPER
                 elif self.ch == '/':
                     self.state = SLASH
                 else:
@@ -166,6 +174,58 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(OP) # > 比较运算符
+            elif self.state == ADD: # +
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '+':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '+' or self.ch == '-':
+                        self.handle_errors() # +++ or ++-
+                    else:
+                        self.retract()
+                        self.write_token(OP) # ++
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '=':
+                        self.handle_errors() # +==
+                    else:
+                        self.retract()
+                        self.write_token(OP) # +=
+                elif self.ch == '-':
+                    self.handle_errors() # +-
+                else:
+                    self.retract()
+                    self.write_token(OP) # +
+            elif self.state == SUB: # -
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '-':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '-' or self.ch == '+':
+                        self.handle_errors() # --- or --+
+                    else:
+                        self.retract()
+                        self.write_token(OP) # --
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '=':
+                        self.handle_errors() # -==
+                    else:
+                        self.retract()
+                        self.write_token(OP) # -=
+                elif self.ch == '+':
+                    self.handle_errors() # -+
+                else:
+                    self.retract()
+                    self.write_token(OP) # -
+            # elif self.state == STAR: # *
+            
+            # elif self.state == AMPER: # &
+            
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()
