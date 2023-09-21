@@ -51,6 +51,7 @@ class LexicalAnalyzer:
                 if self.ch == '_' or self.ch.isdigit() or self.ch.isalpha():
                     self.state = LETTER # 还是标识符状态
                 else:
+                    self.retract()
                     if self.token in KW_table: # 查关键字表
                         self.write_token(KW) # 关键字
                     else:
