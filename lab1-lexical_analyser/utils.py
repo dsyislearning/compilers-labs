@@ -3,7 +3,8 @@ ID = "Identifier"       # 标识符
 KW = "Keyword"          # 关键字
 OP = "Operator"         # 运算符
 CS = "Constant"         # 常量
-SP = "Special Symbol"   # 特殊字符
+DL = "Delimiter"        # 分隔符
+SP = "Special"          # 特殊字符
 # 注释直接跳过
 
 # Token tables
@@ -16,8 +17,6 @@ KW_table = ['auto', 'break', 'case', 'char', 'const', 'continue', 'default',
             '_Complex', '_Imaginary']
 
 # 转义字符表
-ESC_table = ['\'', '"', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v', ]
+ESC_table = ['\'', '"', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v']
 
-SP_table = ['(', ')', '[', ']', '{', '}', '#', ';', '\\']
-
-OP_table = ['+', '-', '*', '/', ]
+DL_table = ['(', ')', '[', ']', '{', '}', ',', ';']

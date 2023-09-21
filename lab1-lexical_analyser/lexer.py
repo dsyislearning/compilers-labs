@@ -61,10 +61,12 @@ class LexicalAnalyzer:
                     self.state = MODULO
                 elif self.ch == '/':
                     self.state = SLASH
-                else:
-                    self.state = INIT
+                elif self.ch in DL_table:
                     self.token += self.ch
-                    self.write_token(SP)
+                    self.write_token(DL) # 分隔符
+                else:
+                    self.token += self.ch
+                    self.write_token(SP) # 特殊字符
             elif self.state == UNDERLINE or self.state == LETTER: # 标识符状态
                 self.token += self.ch
                 self.read_char()
