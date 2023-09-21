@@ -35,6 +35,10 @@ class LexicalAnalyzer:
                     self.state = APOSTR
                 elif self.ch == '"':
                     self.state = QUOTES
+                elif self.ch == '<':
+                    self.state = LT
+                elif self.ch == '>':
+                    self.state = GT
                 elif self.ch == '/':
                     self.state = SLASH
                 else:
@@ -125,6 +129,42 @@ class LexicalAnalyzer:
                     self.write_token(CS) # 字符串常量
                 else:
                     self.state = QUOTES
+            elif self.state == LT: # 小于号状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '<':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '=':
+                        self.token += self.ch
+                        self.write_token(OP) # <<= 赋值运算符
+                    else:
+                        self.retract()
+                        self.write_token(OP) # << 移位运算符
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # <= 比较运算符
+                else:
+                    self.retract()
+                    self.write_token(OP) # < 比较运算符
+            elif self.state == GT: # 大于号状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '>':
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '=':
+                        self.token += self.ch
+                        self.write_token(OP) # >>= 赋值运算符
+                    else:
+                        self.retract()
+                        self.write_token(OP) # >> 移位运算符
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # >= 比较运算符
+                else:
+                    self.retract()
+                    self.write_token(OP) # > 比较运算符
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()
@@ -183,7 +223,7 @@ class LexicalAnalyzer:
 
     def write_token(self, token_type):
         """将识别出来的单词记号写入输出，并刷新token，进入下一轮分析"""
-        self.fout.write("<{0}, {1}>\n".format(token_type, self.token))
+        self.fout.write("{0}: {1}\n".format(token_type, self.token))
         self.token = ''
         self.buffer = self.buffer[-1:]
         self.state = INIT
