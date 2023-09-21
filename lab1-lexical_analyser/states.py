@@ -17,6 +17,11 @@ ADD = 14            # 加号状态
 SUB = 15            # 减号状态
 STAR = 16           # 星号（乘号）状态
 AMPER = 17          # & 号状态 ampersand
-
-BCOMMENT = 21       # 多行注释/**/ BlockCOMMENT
-LCOMMENT = 22       # 单行注释 //  LineCOMMENT
+PIPE = 18           # | 号状态 pipe
+CARET = 19          # ^ 号状态 caret
+TIDE = 20           # ~
+EXCLAIM = 21        # !
+BCOMMENT = 22       # 多行注释/**/ BlockCOMMENT
+LCOMMENT = 23       # 单行注释 //  LineCOMMENT
+MODULO = 24         # %
+EQ = 25             # 等于号 Equal

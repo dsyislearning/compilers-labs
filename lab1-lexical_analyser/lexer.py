@@ -39,14 +39,26 @@ class LexicalAnalyzer:
                     self.state = LT
                 elif self.ch == '>':
                     self.state = GT
+                elif self.ch == '=':
+                    self.state = EQ
                 elif self.ch == '+':
                     self.state = ADD
                 elif self.ch == '-':
                     self.state = SUB
-                # elif self.ch == '*':
-                #     self.state = STAR
-                # elif self.ch == '&':
-                #     self.state = AMPER
+                elif self.ch == '*':
+                    self.state = STAR
+                elif self.ch == '&':
+                    self.state = AMPER
+                elif self.ch == '|':
+                    self.state = PIPE
+                elif self.ch == '^':
+                    self.state = CARET
+                elif self.ch == '~':
+                    self.state = TIDE
+                elif self.ch == '!':
+                    self.state = EXCLAIM
+                elif self.ch == '%':
+                    self.state = MODULO
                 elif self.ch == '/':
                     self.state = SLASH
                 else:
@@ -174,6 +186,15 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(OP) # > 比较运算符
+            elif self.state == EQ: # =
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # ==
+                else:
+                    self.retract()
+                    self.write_token(OP) # =
             elif self.state == ADD: # +
                 self.token += self.ch
                 self.read_char()
@@ -222,10 +243,69 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(OP) # -
-            # elif self.state == STAR: # *
-            
-            # elif self.state == AMPER: # &
-            
+            elif self.state == STAR: # *
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # *=
+                else:
+                    self.retract()
+                    self.write_token(OP) # *
+            elif self.state == AMPER: # &
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '&':
+                    self.token += self.ch
+                    self.write_token(OP) # &&
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # &=
+                else:
+                    self.retract()
+                    self.write_token(OP) # &
+            elif self.state == PIPE: # |
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '|':
+                    self.token += self.ch
+                    self.write_token(OP) # ||
+                elif self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # |=
+                else:
+                    self.retract()
+                    self.write_token(OP) # |
+            elif self.state == CARET: # ^
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # ^=
+                else:
+                    self.retract()
+                    self.write_token(OP) # ^
+            elif self.state == TIDE:
+                self.token += self.ch
+                self.write_token(OP) # ~ 按位取反
+            elif self.state == EXCLAIM:
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # !=
+                else:
+                    self.retract()
+                    self.write_token(OP) # !
+            elif self.state == MODULO: # %
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '=':
+                    self.token += self.ch
+                    self.write_token(OP) # %=
+                else:
+                    self.retract()
+                    self.write_token(OP) # %
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()
