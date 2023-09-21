@@ -33,6 +33,8 @@ class LexicalAnalyzer:
                     self.state = DIGIT
                 elif self.ch == '\'':
                     self.state = APOSTR
+                elif self.ch == '"':
+                    self.state = QUOTES
                 elif self.ch == '/':
                     self.state = SLASH
                 else:
@@ -115,6 +117,14 @@ class LexicalAnalyzer:
                         self.state = INIT
                     else:
                         self.handle_errors()
+            elif self.state == QUOTES: # 双引号状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '"':
+                    self.token += self.ch
+                    self.write_token(CS) # 字符串常量
+                else:
+                    self.state = QUOTES
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()
