@@ -44,7 +44,7 @@ class LexicalAnalyzer:
                 elif self.ch == '+':
                     self.state = ADD
                 elif self.ch == '-':
-                    self.state = SUB
+                    self.state = DASH
                 elif self.ch == '*':
                     self.state = STAR
                 elif self.ch == '&':
@@ -200,46 +200,25 @@ class LexicalAnalyzer:
                 self.read_char()
                 if self.ch == '+':
                     self.token += self.ch
-                    self.read_char()
-                    if self.ch == '+' or self.ch == '-':
-                        self.handle_errors() # +++ or ++-
-                    else:
-                        self.retract()
-                        self.write_token(OP) # ++
+                    self.write_token(OP) # ++
                 elif self.ch == '=':
                     self.token += self.ch
-                    self.read_char()
-                    if self.ch == '=':
-                        self.handle_errors() # +==
-                    else:
-                        self.retract()
-                        self.write_token(OP) # +=
-                elif self.ch == '-':
-                    self.handle_errors() # +-
+                    self.write_token(OP) # +=
                 else:
                     self.retract()
                     self.write_token(OP) # +
-            elif self.state == SUB: # -
+            elif self.state == DASH: # -
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '-':
                     self.token += self.ch
-                    self.read_char()
-                    if self.ch == '-' or self.ch == '+':
-                        self.handle_errors() # --- or --+
-                    else:
-                        self.retract()
-                        self.write_token(OP) # --
+                    self.write_token(OP) # --
                 elif self.ch == '=':
                     self.token += self.ch
-                    self.read_char()
-                    if self.ch == '=':
-                        self.handle_errors() # -==
-                    else:
-                        self.retract()
-                        self.write_token(OP) # -=
-                elif self.ch == '+':
-                    self.handle_errors() # -+
+                    self.write_token(OP) # -=
+                elif self.ch == '>':
+                    self.token += self.ch
+                    self.write_token(OP) # ->
                 else:
                     self.retract()
                     self.write_token(OP) # -
