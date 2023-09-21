@@ -31,8 +31,8 @@ class LexicalAnalyzer:
                     self.state = LETTER
                 elif self.ch.isdigit():
                     self.state = DIGIT
-                # elif self.ch == '\'':
-                #     self.state = STARTCHAR
+                elif self.ch == '\'':
+                    self.state = APOSTR
                 elif self.ch == '/':
                     self.state = SLASH
                 else:
@@ -88,27 +88,33 @@ class LexicalAnalyzer:
                     self.state = EXP
                 else:
                     self.write_token(CS) # 常量（科学记数法）
-            # elif self.state == STARTCHAR: # 单引号状态
-            #     self.token += self.ch
-            #     self.read_char()
-            #     if self.ch == '\\':
-            #         self.state = ESC # 转义字符
-            #     elif self.ch not in QUOTE_table:
-            #         self.state = UNICHAR # 单字符
-            #     else:
-            #         self.handle_errors() # 未转义的字符
-            # elif self.state == UNICHAR: # 单字符常量
-            #     self.token += self.ch
-            #     self.read_char()
-            #     if self.ch == '\'':
-            #         self.state = ENDCHAR
-            #     else:
-            #         self.handle_errors()
-            # elif self.state == ENDCHAR: # 结束字符常量
-            #     self.token += self.ch
-            #     self.read_char()
-            #     if self.ch != '\'':
-            #         pass #TODO
+            elif self.state == APOSTR: # 单引号状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '\\':
+                    self.state = ESC # 转义字符
+                elif self.ch == '\'' or self.ch == '"':
+                    self.handle_errors() # 引号未转义
+                else:
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '\'':
+                        self.token += self.ch
+                        self.write_token(CS)
+                    else:
+                        self.handle_errors() # 多于一个字符
+            elif self.state == ESC: # 转义字符
+                self.token += self.ch
+                self.read_char()
+                if self.ch in ESC_table:
+                    self.token += self.ch
+                    self.read_char()
+                    if self.ch == '\'':
+                        self.token += self.ch
+                        self.write_token(CS)
+                        self.state = INIT
+                    else:
+                        self.handle_errors()
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()

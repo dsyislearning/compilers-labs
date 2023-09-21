@@ -7,10 +7,8 @@ DOT = 4             # 小数点状态
 SCI = 5             # 科学记数法状态
 DECIMAL = 6         # 小数部分状态
 EXP = 7             # 科学记数法的指数状态
-STARTCHAR = 8          # 字符常量状态
+APOSTR = 8          # 单引号（字符常量）状态
 ESC = 9             # 转义状态
-UNICHAR = 10        # 字符常量的单个字符状态
-ENDCHAR = 11
 QUOTES = 12         # 字符串常量状态
 
 SLASH = 20          # 斜杠状态
