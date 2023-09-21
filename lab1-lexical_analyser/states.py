@@ -1,10 +1,19 @@
 # States definitions
-INIT = 0        # 初始状态
-UNDERLINE = 1   # 标识符状态（下划线）
-LETTER = 2      # 标识符状态（字母）
-DIGIT = 3       # 数字状态
-DOT = 4         # 小数点状态
-SCI = 5         # 科学记数法状态
-DECIMAL = 6     # 小数部分状态
-EXP = 7         # 科学记数法的指数状态
-CHAR = 8        # 字符常量状态
+INIT = 0            # 初始状态
+UNDERLINE = 1       # 标识符状态（下划线）
+LETTER = 2          # 标识符状态（字母）
+DIGIT = 3           # 数字状态
+DOT = 4             # 小数点状态
+SCI = 5             # 科学记数法状态
+DECIMAL = 6         # 小数部分状态
+EXP = 7             # 科学记数法的指数状态
+STARTCHAR = 8          # 字符常量状态
+ESC = 9             # 转义状态
+UNICHAR = 10        # 字符常量的单个字符状态
+ENDCHAR = 11
+QUOTES = 12         # 字符串常量状态
+
+SLASH = 20          # 斜杠状态
+
+BCOMMENT = 21       # 多行注释/**/ BlockCOMMENT
+LCOMMENT = 22       # 单行注释 //  LineCOMMENT

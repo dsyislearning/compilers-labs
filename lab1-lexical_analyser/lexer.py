@@ -7,8 +7,10 @@ class LexicalAnalyzer:
     def __init__(self, input, output):
         self.fin = input
         self.fout = output
+        self.logfile = open('log.txt', 'w')
         self.state = INIT
-        self.buffer = ''
+        self.buffer = ''    # 正常读入的缓冲区
+        self.ahead = ''     # 超前读入的缓冲区
         self.ch = ''
         self.token = ''
 
@@ -20,6 +22,7 @@ class LexicalAnalyzer:
         # 状态机逻辑
         while True:
             if self.state == INIT: # 初始状态
+                self.log()
                 self.read_char()
                 self.read_white()
                 if self.ch == '_':
@@ -29,7 +32,13 @@ class LexicalAnalyzer:
                 elif self.ch.isdigit():
                     self.state = DIGIT
                 # elif self.ch == '\'':
-                #     self.state = CHAR
+                #     self.state = STARTCHAR
+                elif self.ch == '/':
+                    self.state = SLASH
+                else:
+                    self.state = INIT
+                    self.token += self.ch
+                    self.write_token(SP)
             elif self.state == UNDERLINE or self.state == LETTER: # 标识符状态
                 self.token += self.ch
                 self.read_char()
@@ -79,25 +88,81 @@ class LexicalAnalyzer:
                     self.state = EXP
                 else:
                     self.write_token(CS) # 常量（科学记数法）
+            # elif self.state == STARTCHAR: # 单引号状态
+            #     self.token += self.ch
+            #     self.read_char()
+            #     if self.ch == '\\':
+            #         self.state = ESC # 转义字符
+            #     elif self.ch not in QUOTE_table:
+            #         self.state = UNICHAR # 单字符
+            #     else:
+            #         self.handle_errors() # 未转义的字符
+            # elif self.state == UNICHAR: # 单字符常量
+            #     self.token += self.ch
+            #     self.read_char()
+            #     if self.ch == '\'':
+            #         self.state = ENDCHAR
+            #     else:
+            #         self.handle_errors()
+            # elif self.state == ENDCHAR: # 结束字符常量
+            #     self.token += self.ch
+            #     self.read_char()
+            #     if self.ch != '\'':
+            #         pass #TODO
+            elif self.state == SLASH: # 斜杠状态
+                self.token += self.ch
+                self.read_char()
+                if self.ch == '*':
+                    self.state = BCOMMENT # 多行注释
+                elif self.ch == '/':
+                    self.state = LCOMMENT # 单行注释
+                else:
+                    self.retract()
+                    self.write_token(OP) # 操作符（除法）
+            elif self.state == BCOMMENT: # 多行注释
+                self.read_char()
+                while self.ch != '*': # 注释全部跳过
+                    self.read_char()
+                self.read_char() # 查看第二个*之后的字符
+                if self.ch == '/': # 注释结束
+                    self.token = ''
+                    self.state = INIT
+                else:
+                    self.state = BCOMMENT
+            elif self.state == LCOMMENT: # 单行注释
+                self.read_char()
+                while self.ch != '\n':
+                    self.read_char()
+                self.token = ''
+                self.state = INIT
             else:
                 break
-                
 
     def read_char(self):
         """每调用一次，返回forward指向的buffer中的字符，并把它放入变量ch中，然后，移动forward，使之指向下一个字符"""
         if self.buffer == '':
-            self.buffer += self.fin.read(1)
-            if self.buffer == '': # 读到文件末尾，结束词法分析程序
-                self.fin.close()
-                self.fout.close()
-                exit(0)
+            if self.ahead != '':
+                self.buffer += self.ahead[0]
+                self.ahead = self.ahead[1:]
+            else:
+                self.buffer += self.fin.read(1)
+                if self.buffer == '': # 读到文件末尾，结束词法分析程序
+                    self.fin.close()
+                    self.fout.close()
+                    self.logfile.close()
+                    exit(0)
         self.ch = self.buffer[-1]
-        self.buffer += self.fin.read(1)
+        if self.ahead != '':
+            self.buffer += self.ahead[0]
+            self.ahead = self.ahead[1:]
+        else:
+            self.buffer += self.fin.read(1)
         return self.ch
 
     def read_white(self):
         """检查ch中的字符是否为空格，若是，则反复调用read_char()，直到ch中进入一个非空字符为止"""
         while self.ch.isspace():
+            self.buffer = self.buffer[1:]
             self.read_char()
 
     def write_token(self, token_type):
@@ -107,10 +172,19 @@ class LexicalAnalyzer:
         self.buffer = self.buffer[-1:]
         self.state = INIT
 
+    def retract(self):
+        """向前指针forward后退一个字符"""
+        self.ahead = self.buffer[-1] + self.ahead[:]
+        self.buffer = self.buffer[:-1]
+        self.ch = self.buffer[-2]
+
     def handle_errors(self):
         """对发现的词法错误进行相应的处理"""
         # TODO
         self.state = INIT
+    
+    def log(self):
+        self.logfile.write(f'State: {self.state}\t\tC: [{self.ch}]\t\tbuffer: [{self.buffer}]\t\tahead: [{self.ahead}]\n')
 
 
 def main():

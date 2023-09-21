@@ -7,6 +7,7 @@ SP = "Special Symbol"   # 特殊字符
 # 注释直接跳过
 
 # Token tables
+# 关键字表
 KW_table = ['auto', 'break', 'case', 'char', 'const', 'continue', 'default',
             'do', 'double', 'else', 'enum', 'extern', 'float', 'for',
             'goto', 'if', 'inline', 'int', 'long', 'register', 'restrict',
@@ -14,9 +15,8 @@ KW_table = ['auto', 'break', 'case', 'char', 'const', 'continue', 'default',
             'typedef', 'union', 'usigned', 'void', 'volatile', 'while', '_Bool',
             '_Complex', '_Imaginary']
 
-ID_table = []
-
-CS_table = []
+# 转义字符引号表
+QUOTE_table = ['\'', '"']
 
 SP_table = ['(', ')', '[', ']', '{', '}', '#', ';', '\\']
 
