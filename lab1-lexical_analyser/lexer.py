@@ -121,7 +121,11 @@ class LexicalAnalyzer:
                     else:
                         self.state = DECIMAL # 小数部分状态
                 else:
-                    self.handle_errors() # 小数点后没有0
+                    if self.token[0] == '.': # 前后都不是数字
+                        self.retract()
+                        self.write_token(OP) # .运算符
+                    else:
+                        self.handle_errors() # 小数点后没有0
             elif self.state == DECIMAL: # 小数部分状态
                 self.token += self.ch
                 self.read_char()
@@ -411,8 +415,6 @@ class LexicalAnalyzer:
                 else:
                     self.buffer += rd
                     self.characters += 1
-                    if rd == '\n':
-                        self.lines += 1
         self.ch = self.buffer[-1]
         if self.ahead != '':
             self.buffer += self.ahead[0]
@@ -421,9 +423,9 @@ class LexicalAnalyzer:
             rd = self.fin.read(1)
             if rd != '':
                 self.characters += 1
-                if rd == '\n':
-                    self.lines += 1
             self.buffer += rd
+        if self.ch == '\n':
+            self.lines += 1
         return self.ch
 
     def read_white(self):
@@ -445,6 +447,8 @@ class LexicalAnalyzer:
         self.ahead = self.buffer[-1] + self.ahead[:]
         self.buffer = self.buffer[:-1]
         self.ch = self.buffer[-2]
+        if self.buffer[-1] == '\n':
+            self.lines -= 1
 
     def handle_errors(self):
         """对发现的词法错误进行相应的处理"""
@@ -453,7 +457,7 @@ class LexicalAnalyzer:
                 self.warnings += 1
                 self.token = '0' + self.token[:]
                 self.state = DECIMAL
-                print_warning(self.lines, "小数点前没有0")
+                print_warning(self.lines, "小数点前没有数字")
             else: # 小数点后没有数字，自动补0
                 self.warnings += 1
                 self.retract()
@@ -473,7 +477,7 @@ class LexicalAnalyzer:
                     self.read_char()
                 self.token = ''
                 self.state = INIT
-                print_error(self.lines, "数字开头的非法标识符")
+                print_error(self.lines - 1, "数字开头的非法标识符")
         elif self.state == SCI: # 指数部分没有数字，自动补0
             self.warnings += 1
             self.retract()
