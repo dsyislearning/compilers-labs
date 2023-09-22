@@ -27,6 +27,7 @@ class LexicalAnalyzer:
 
     def analyze(self):
         """词法分析过程"""
+        print_info()
         # 打开文件
         self.fin = open(self.fin, 'r')
         self.fout = open(self.fout, 'w')
@@ -449,18 +450,22 @@ class LexicalAnalyzer:
         """对发现的词法错误进行相应的处理"""
         if self.state == DOT:
             if self.token[0] =='.': # 小数点前没有0
+                self.warnings += 1
                 self.token = '0' + self.token[:]
                 self.state = DECIMAL
+                print_warning(self.lines, "小数点前没有0")
             else: # 小数点后没有数字，自动补0
                 self.warnings += 1
                 self.retract()
                 self.ch = '0'
                 self.state = DECIMAL
+                print_warning(self.lines, "小数点后没有数字")
         elif self.state == DIGIT:
             if self.ch.isdigit(): # 0开头非八进制，去掉0
                 self.warnings += 1
                 self.token = self.token[1:]
                 self.state = DIGIT # 继续读后面的
+                print_warning(self.lines, "0开头的非八进制数")
             elif self.ch == '_' or self.ch.isalpha(): # 非法标识符（数字开头）
                 self.errors += 1
                 self.read_char()
@@ -468,22 +473,26 @@ class LexicalAnalyzer:
                     self.read_char()
                 self.token = ''
                 self.state = INIT
+                print_error(self.lines, "数字开头的非法标识符")
         elif self.state == SCI: # 指数部分没有数字，自动补0
             self.warnings += 1
             self.retract()
             self.token += '0'
             self.write_token(CS)
             self.state = INIT
+            print_warning(self.lines, "指数部分没有数字")
         elif self.state == APOSTR:
             self.errors += 1
             if self.ch == '\'': # 空字符常量
                 self.token = ''
                 self.state = INIT
+                print_error(self.lines, "字符常量不能为空")
             else: # 多于一个字符
                 self.retract() # 回退到第一个字符
                 self.retract() # 回退到第一个单引号
                 self.token = ''
                 self.state = INIT
+                print_error(self.lines, "字符常量内有多个字符")
         elif self.state == ESC:
             self.errors += 1
             if self.ch != '\'': # 多于一个字符
@@ -492,12 +501,15 @@ class LexicalAnalyzer:
                 self.retract() # 退回到第一个单引号
                 self.token = ''
                 self.state = INIT
+                print_error(self.lines, "字符常量内有多个字符")
             else:
                 self.token = ''
                 self.state = INIT # 非法转义字符
+                print_error(self.lines, "非法转义字符")
 
     def print_result(self):
-        print_info()
+        """在退出程序前打印统计结果"""
+        print("---------------------------------")
         print(f"File: {os.path.join(os.getcwd(), self.fin.name)}")
         print(f"Lines: {self.lines}, Characters: {self.characters}")
         print(f'Identifiers: {self.ID_num}')

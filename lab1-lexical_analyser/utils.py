@@ -23,7 +23,14 @@ ESC_table = ['\'', '"', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v']
 DL_table = ['(', ')', '[', ']', '{', '}', ',', ';']
 
 # Print functions
+def print_error(line, msg):
+    print(f'[ERROR] line {line + 1}: {msg}')
+
+def print_warning(line, msg):
+    print(f'[WARNING] line {line + 1}: {msg}')
+
 def print_info():
+    print("---------------------------------")
     print('''  ____   _                       
  / ___| | |    _____  _____ _ __ 
 | |     | |   / _ \ \/ / _ \ '__|
