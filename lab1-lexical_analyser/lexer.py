@@ -1,7 +1,7 @@
 import sys
 import os
 
-# from logconfig import *       # 日志系统
+from logconfig import *       # 日志系统
 from states import *    # 状态常量
 from utils import *     # 记号表
 
@@ -373,18 +373,21 @@ class LexicalAnalyzer:
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '*':
+                    self.buffer = self.buffer[2:]
                     self.state = BCOMMENT # 多行注释
                 elif self.ch == '/':
+                    self.buffer = self.buffer[2:]
                     self.state = LCOMMENT # 单行注释
                 else:
                     self.retract()
                     self.write_token(OP) # 操作符（除法）
                     self.OP_num += 1
             elif self.state == BCOMMENT: # 多行注释
-                self.read_char()
                 while self.ch != '*': # 注释全部跳过
                     self.read_char()
+                    self.buffer = self.buffer[1:]
                 self.read_char() # 查看第二个*之后的字符
+                self.buffer = self.buffer[1:]
                 if self.ch == '/': # 注释结束
                     self.token = ''
                     self.state = INIT
@@ -393,7 +396,9 @@ class LexicalAnalyzer:
             elif self.state == LCOMMENT: # 单行注释
                 self.read_char()
                 while self.ch != '\n':
+                    self.buffer = self.buffer[1:]
                     self.read_char()
+                self.buffer = self.buffer[1:]
                 self.token = ''
                 self.state = INIT
             else:
@@ -436,7 +441,6 @@ class LexicalAnalyzer:
 
     def write_token(self, token_type):
         """将识别出来的单词记号写入输出，并刷新token，进入下一轮分析"""
-        # log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
         self.fout.write("{0}: {1}\n".format(token_type, self.token))
         self.token = ''
         self.buffer = self.buffer[-1:]
@@ -453,7 +457,7 @@ class LexicalAnalyzer:
     def handle_errors(self):
         """对发现的词法错误进行相应的处理"""
         if self.state == DOT:
-            if self.token[0] =='.': # 小数点前没有0
+            if self.token[0] =='.': # 小数点前没有数字
                 self.warnings += 1
                 self.token = '0' + self.token[:]
                 self.state = DECIMAL
@@ -474,6 +478,8 @@ class LexicalAnalyzer:
                 self.errors += 1
                 self.read_char()
                 while self.ch.isdigit() or self.ch.isalpha() or self.ch == '_': # 跳过非法标识符
+                    log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
+                    self.buffer = self.buffer[1:]
                     self.read_char()
                 self.token = ''
                 self.state = INIT
