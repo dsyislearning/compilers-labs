@@ -59,6 +59,9 @@ class LexicalAnalyzer:
                     self.state = EXCLAIM
                 elif self.ch == '%':
                     self.state = MODULO
+                elif self.ch == '.':
+                    self.token += self.ch
+                    self.write_token(OP) # . 取成员
                 elif self.ch == '/':
                     self.state = SLASH
                 elif self.ch in DL_table:
@@ -86,6 +89,7 @@ class LexicalAnalyzer:
                 elif self.ch == '.':
                     self.state = DOT
                 else:
+                    self.retract()
                     self.write_token(CS) # 常量（整数）
             elif self.state == DOT: # 小数点状态
                 self.token += self.ch
@@ -102,6 +106,7 @@ class LexicalAnalyzer:
                 elif self.ch == 'E' or self.ch == 'e':
                     self.state = SCI
                 else:
+                    self.retract()
                     self.write_token(CS) # 常量（浮点数）
             elif self.state == SCI: # 科学记数法状态
                 self.token += self.ch
@@ -116,6 +121,7 @@ class LexicalAnalyzer:
                 if self.ch.isdigit():
                     self.state = EXP
                 else:
+                    self.retract()
                     self.write_token(CS) # 常量（科学记数法）
             elif self.state == APOSTR: # 单引号状态
                 self.token += self.ch

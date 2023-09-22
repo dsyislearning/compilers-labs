@@ -19,4 +19,5 @@ KW_table = ['auto', 'break', 'case', 'char', 'const', 'continue', 'default',
 # 转义字符表
 ESC_table = ['\'', '"', '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v']
 
+# 分隔符表
 DL_table = ['(', ')', '[', ']', '{', '}', ',', ';']
