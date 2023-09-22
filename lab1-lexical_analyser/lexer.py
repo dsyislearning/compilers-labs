@@ -1,5 +1,6 @@
 import sys
 
+# from logconfig import *       # 日志系统
 from states import *    # 状态常量
 from utils import *     # 记号表
 
@@ -7,12 +8,13 @@ class LexicalAnalyzer:
     def __init__(self, input, output):
         self.fin = input
         self.fout = output
-        self.logfile = open('log.txt', 'w')
         self.state = INIT
         self.buffer = ''    # 正常读入的缓冲区
         self.ahead = ''     # 超前读入的缓冲区
         self.ch = ''
         self.token = ''
+        self.warnings = 0
+        self.errors = 0
 
     def analyze(self):
         """词法分析过程"""
@@ -22,7 +24,7 @@ class LexicalAnalyzer:
         # 状态机逻辑
         while True:
             if self.state == INIT: # 初始状态
-                # self.log()
+                # log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
                 self.read_char()
                 self.read_white()
                 if self.ch == '_':
@@ -60,8 +62,7 @@ class LexicalAnalyzer:
                 elif self.ch == '%':
                     self.state = MODULO
                 elif self.ch == '.':
-                    self.token += self.ch
-                    self.write_token(OP) # . 取成员
+                    self.state = DOT
                 elif self.ch == '/':
                     self.state = SLASH
                 elif self.ch in DL_table:
@@ -85,9 +86,14 @@ class LexicalAnalyzer:
                 self.token += self.ch
                 self.read_char()
                 if self.ch.isdigit():
-                    self.state = DIGIT # 还是数字状态
+                    if self.token[0] == '0' and (self.ch == '8' or self.ch =='9'):
+                        self.handle_errors()
+                    else:
+                        self.state = DIGIT # 还是数字状态
                 elif self.ch == '.':
                     self.state = DOT
+                elif self.ch == '_' or self.ch.isalpha():
+                    self.handle_errors() # 非法标识符
                 else:
                     self.retract()
                     self.write_token(CS) # 常量（整数）
@@ -95,9 +101,13 @@ class LexicalAnalyzer:
                 self.token += self.ch
                 self.read_char()
                 if self.ch.isdigit():
-                    self.state = DECIMAL # 小数部分状态
+                    if self.token[0] == '.':
+                        self.handle_errors() # 小数点前没有0
+                    else:
+                        self.state = DECIMAL # 小数部分状态
                 else:
-                    self.handle_errors()
+                    self.handle_errors() # 小数点后没有0
+
             elif self.state == DECIMAL: # 小数部分状态
                 self.token += self.ch
                 self.read_char()
@@ -128,8 +138,8 @@ class LexicalAnalyzer:
                 self.read_char()
                 if self.ch == '\\':
                     self.state = ESC # 转义字符
-                elif self.ch == '\'' or self.ch == '"':
-                    self.handle_errors() # 引号未转义
+                elif self.ch == '\'':
+                    self.handle_errors() # C语言不支持空字符常量
                 else:
                     self.token += self.ch
                     self.read_char()
@@ -149,7 +159,18 @@ class LexicalAnalyzer:
                         self.write_token(CS)
                         self.state = INIT
                     else:
-                        self.handle_errors()
+                        self.handle_errors() # 多于一个字符
+                else:
+                    if self.ch == '\'':
+                        self.handle_errors() # 只有一个转义符号 \
+                    else:
+                        self.token = self.token[:-1]
+                        self.token += self.ch
+                        self.read_char()
+                        if self.ch == '\'':
+                            self.handle_errors() # 无效的转义字符，保留后面一个字符
+                        else:
+                            self.handle_errors() # 多于一个字符
             elif self.state == QUOTES: # 双引号状态
                 self.token += self.ch
                 self.read_char()
@@ -333,7 +354,6 @@ class LexicalAnalyzer:
                 if self.buffer == '': # 读到文件末尾，结束词法分析程序
                     self.fin.close()
                     self.fout.close()
-                    self.logfile.close()
                     exit(0)
         self.ch = self.buffer[-1]
         if self.ahead != '':
@@ -351,6 +371,7 @@ class LexicalAnalyzer:
 
     def write_token(self, token_type):
         """将识别出来的单词记号写入输出，并刷新token，进入下一轮分析"""
+        # log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
         self.fout.write("{0}: {1}\n".format(token_type, self.token))
         self.token = ''
         self.buffer = self.buffer[-1:]
@@ -364,11 +385,54 @@ class LexicalAnalyzer:
 
     def handle_errors(self):
         """对发现的词法错误进行相应的处理"""
-        # TODO
-        self.state = INIT
-    
-    def log(self):
-        self.logfile.write(f'State: {self.state}\t\tC: [{self.ch}]\t\tbuffer: [{self.buffer}]\t\tahead: [{self.ahead}]\n')
+        if self.state == DOT:
+            if self.token[0] =='.': # 小数点前没有0
+                self.token = '0' + self.token[:]
+                self.state = DECIMAL
+            else: # 小数点后没有数字，自动补0
+                self.warnings += 1
+                self.retract()
+                self.ch = '0'
+                self.state = DECIMAL
+        elif self.state == DIGIT:
+            if self.ch.isdigit(): # 0开头非八进制，去掉0
+                self.warnings += 1
+                self.token = self.token[1:]
+                self.state = DIGIT # 继续读后面的
+            elif self.ch == '_' or self.ch.isalpha(): # 非法标识符（数字开头）
+                self.errors += 1
+                self.read_char()
+                while self.ch.isdigit() or self.ch.isalpha() or self.ch == '_': # 跳过非法标识符
+                    self.read_char()
+                self.token = ''
+                self.state = INIT
+        elif self.state == SCI: # 指数部分没有数字，自动补0
+            self.warnings += 1
+            self.retract()
+            self.token += '0'
+            self.write_token(CS)
+            self.state = INIT
+        elif self.state == APOSTR:
+            self.errors += 1
+            if self.ch == '\'': # 空字符常量
+                self.token = ''
+                self.state = INIT
+            else: # 多于一个字符
+                self.retract() # 回退到第一个字符
+                self.retract() # 回退到第一个单引号
+                self.token = ''
+                self.state = INIT
+        elif self.state == ESC:
+            self.errors += 1
+            if self.ch != '\'': # 多于一个字符
+                self.retract() # 退回到转义字符
+                self.retract() # 退回到转义\
+                self.retract() # 退回到第一个单引号
+                self.token = ''
+                self.state = INIT
+            else:
+                self.token = ''
+                self.state = INIT # 非法转义字符
 
 
 def main():
