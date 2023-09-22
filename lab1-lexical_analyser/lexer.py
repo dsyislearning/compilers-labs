@@ -1,4 +1,5 @@
 import sys
+import os
 
 # from logconfig import *       # 日志系统
 from states import *    # 状态常量
@@ -15,6 +16,14 @@ class LexicalAnalyzer:
         self.token = ''
         self.warnings = 0
         self.errors = 0
+        self.lines = 0
+        self.characters = 0
+        self.ID_num = 0
+        self.KW_num = 0
+        self.OP_num = 0
+        self.CS_num = 0
+        self.DL_num = 0
+        self.SP_num = 0
 
     def analyze(self):
         """词法分析过程"""
@@ -68,9 +77,11 @@ class LexicalAnalyzer:
                 elif self.ch in DL_table:
                     self.token += self.ch
                     self.write_token(DL) # 分隔符
+                    self.DL_num += 1
                 else:
                     self.token += self.ch
                     self.write_token(SP) # 特殊字符
+                    self.SP_num += 1
             elif self.state == UNDERLINE or self.state == LETTER: # 标识符状态
                 self.token += self.ch
                 self.read_char()
@@ -80,8 +91,10 @@ class LexicalAnalyzer:
                     self.retract()
                     if self.token in KW_table: # 查关键字表
                         self.write_token(KW) # 关键字
+                        self.KW_num += 1
                     else:
                         self.write_token(ID) # 标识符
+                        self.ID_num += 1
             elif self.state == DIGIT: # 数字状态
                 self.token += self.ch
                 self.read_char()
@@ -97,6 +110,7 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(CS) # 常量（整数）
+                    self.CS_num += 1
             elif self.state == DOT: # 小数点状态
                 self.token += self.ch
                 self.read_char()
@@ -107,7 +121,6 @@ class LexicalAnalyzer:
                         self.state = DECIMAL # 小数部分状态
                 else:
                     self.handle_errors() # 小数点后没有0
-
             elif self.state == DECIMAL: # 小数部分状态
                 self.token += self.ch
                 self.read_char()
@@ -118,6 +131,7 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(CS) # 常量（浮点数）
+                    self.CS_num += 1
             elif self.state == SCI: # 科学记数法状态
                 self.token += self.ch
                 self.read_char()
@@ -133,6 +147,7 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(CS) # 常量（科学记数法）
+                    self.CS_num += 1
             elif self.state == APOSTR: # 单引号状态
                 self.token += self.ch
                 self.read_char()
@@ -145,7 +160,8 @@ class LexicalAnalyzer:
                     self.read_char()
                     if self.ch == '\'':
                         self.token += self.ch
-                        self.write_token(CS)
+                        self.write_token(CS) # 单字符常量
+                        self.CS_num += 1
                     else:
                         self.handle_errors() # 多于一个字符
             elif self.state == ESC: # 转义字符
@@ -156,7 +172,8 @@ class LexicalAnalyzer:
                     self.read_char()
                     if self.ch == '\'':
                         self.token += self.ch
-                        self.write_token(CS)
+                        self.write_token(CS) # 转义字符常量
+                        self.CS_num += 1
                         self.state = INIT
                     else:
                         self.handle_errors() # 多于一个字符
@@ -177,6 +194,7 @@ class LexicalAnalyzer:
                 if self.ch == '"':
                     self.token += self.ch
                     self.write_token(CS) # 字符串常量
+                    self.CS_num += 1
                 else:
                     self.state = QUOTES
             elif self.state == LT: # 小于号状态
@@ -188,15 +206,19 @@ class LexicalAnalyzer:
                     if self.ch == '=':
                         self.token += self.ch
                         self.write_token(OP) # <<= 赋值运算符
+                        self.OP_num += 1
                     else:
                         self.retract()
                         self.write_token(OP) # << 移位运算符
+                        self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # <= 比较运算符
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # < 比较运算符
+                    self.OP_num += 1
             elif self.state == GT: # 大于号状态
                 self.token += self.ch
                 self.read_char()
@@ -206,114 +228,142 @@ class LexicalAnalyzer:
                     if self.ch == '=':
                         self.token += self.ch
                         self.write_token(OP) # >>= 赋值运算符
+                        self.OP_num += 1
                     else:
                         self.retract()
                         self.write_token(OP) # >> 移位运算符
+                        self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # >= 比较运算符
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # > 比较运算符
+                    self.OP_num += 1
             elif self.state == EQ: # =
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # ==
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # =
+                    self.OP_num += 1
             elif self.state == ADD: # +
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '+':
                     self.token += self.ch
                     self.write_token(OP) # ++
+                    self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # +=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # +
+                    self.OP_num += 1
             elif self.state == DASH: # -
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '-':
                     self.token += self.ch
                     self.write_token(OP) # --
+                    self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # -=
+                    self.OP_num += 1
                 elif self.ch == '>':
                     self.token += self.ch
                     self.write_token(OP) # ->
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # -
+                    self.OP_num += 1
             elif self.state == STAR: # *
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # *=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # *
+                    self.OP_num += 1
             elif self.state == AMPER: # &
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '&':
                     self.token += self.ch
                     self.write_token(OP) # &&
+                    self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # &=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # &
+                    self.OP_num += 1
             elif self.state == PIPE: # |
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '|':
                     self.token += self.ch
                     self.write_token(OP) # ||
+                    self.OP_num += 1
                 elif self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # |=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # |
+                    self.OP_num += 1
             elif self.state == CARET: # ^
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # ^=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # ^
+                    self.OP_num += 1
             elif self.state == TIDE:
                 self.token += self.ch
                 self.write_token(OP) # ~ 按位取反
+                self.OP_num += 1
             elif self.state == EXCLAIM:
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # !=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # !
+                    self.OP_num += 1
             elif self.state == MODULO: # %
                 self.token += self.ch
                 self.read_char()
                 if self.ch == '=':
                     self.token += self.ch
                     self.write_token(OP) # %=
+                    self.OP_num += 1
                 else:
                     self.retract()
                     self.write_token(OP) # %
+                    self.OP_num += 1
             elif self.state == SLASH: # 斜杠状态
                 self.token += self.ch
                 self.read_char()
@@ -324,6 +374,7 @@ class LexicalAnalyzer:
                 else:
                     self.retract()
                     self.write_token(OP) # 操作符（除法）
+                    self.OP_num += 1
             elif self.state == BCOMMENT: # 多行注释
                 self.read_char()
                 while self.ch != '*': # 注释全部跳过
@@ -350,17 +401,28 @@ class LexicalAnalyzer:
                 self.buffer += self.ahead[0]
                 self.ahead = self.ahead[1:]
             else:
-                self.buffer += self.fin.read(1)
-                if self.buffer == '': # 读到文件末尾，结束词法分析程序
+                rd = self.fin.read(1)
+                if rd == '': # 读到文件末尾，结束词法分析程序
                     self.fin.close()
                     self.fout.close()
+                    self.print_result() # 打印结果
                     exit(0)
+                else:
+                    self.buffer += rd
+                    self.characters += 1
+                    if rd == '\n':
+                        self.lines += 1
         self.ch = self.buffer[-1]
         if self.ahead != '':
             self.buffer += self.ahead[0]
             self.ahead = self.ahead[1:]
         else:
-            self.buffer += self.fin.read(1)
+            rd = self.fin.read(1)
+            if rd != '':
+                self.characters += 1
+                if rd == '\n':
+                    self.lines += 1
+            self.buffer += rd
         return self.ch
 
     def read_white(self):
@@ -433,6 +495,19 @@ class LexicalAnalyzer:
             else:
                 self.token = ''
                 self.state = INIT # 非法转义字符
+
+    def print_result(self):
+        print_info()
+        print(f"File: {os.path.join(os.getcwd(), self.fin.name)}")
+        print(f"Lines: {self.lines}, Characters: {self.characters}")
+        print(f'Identifiers: {self.ID_num}')
+        print(f'Keywords: {self.KW_num}')
+        print(f'Operators: {self.OP_num}')
+        print(f'Constants: {self.CS_num}')
+        print(f'Delimiters: {self.DL_num}')
+        print(f'Special Symbols: {self.SP_num}')
+        print(f'Errors: {self.errors}, Warnings: {self.warnings}')
+        print(f'Output: {os.path.join(os.getcwd(), self.fout.name)}')
 
 
 def main():
