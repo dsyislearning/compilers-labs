@@ -1,7 +1,6 @@
 import sys
 import os
 
-from logconfig import *       # 日志系统
 from states import *    # 状态常量
 from utils import *     # 记号表
 
@@ -34,7 +33,6 @@ class LexicalAnalyzer:
         # 状态机逻辑
         while True:
             if self.state == INIT: # 初始状态
-                # log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
                 self.read_char()
                 self.read_white()
                 if self.ch == '_':
@@ -478,12 +476,12 @@ class LexicalAnalyzer:
                 self.errors += 1
                 self.read_char()
                 while self.ch.isdigit() or self.ch.isalpha() or self.ch == '_': # 跳过非法标识符
-                    log.debug(f'[State:{self.state}] [C:{repr(self.ch)}] [buffer:{repr(self.buffer)}] [ahead:{repr(self.ahead)}]')
                     self.buffer = self.buffer[1:]
                     self.read_char()
+                self.retract()
                 self.token = ''
                 self.state = INIT
-                print_error(self.lines - 1, "数字开头的非法标识符")
+                print_error(self.lines, "数字开头的非法标识符")
         elif self.state == SCI: # 指数部分没有数字，自动补0
             self.warnings += 1
             self.retract()
