@@ -97,18 +97,30 @@ class LexicalAnalyzer:
             elif self.state == DIGIT: # 数字状态
                 self.token += self.ch
                 self.read_char()
-                if self.ch.isdigit():
-                    if self.token[0] == '0' and (self.ch == '8' or self.ch =='9'):
-                        self.handle_errors()
+                if self.token[0] == '0' and (self.ch == 'x' or self.ch == 'X'): # 十六进制
+                    self.state = HEX
+                else:
+                    if self.ch.isdigit():
+                        if self.token[0] == '0' and (self.ch == '8' or self.ch =='9'):
+                            self.handle_errors() # 0开头的非八进制
+                        else:
+                            self.state = DIGIT # 还是数字状态
+                    elif self.ch == '.':
+                        self.state = DOT
+                    elif self.ch == '_' or self.ch.isalpha():
+                        self.handle_errors() # 非法标识符
                     else:
-                        self.state = DIGIT # 还是数字状态
-                elif self.ch == '.':
-                    self.state = DOT
-                elif self.ch == '_' or self.ch.isalpha():
-                    self.handle_errors() # 非法标识符
+                        self.retract()
+                        self.write_token(CS) # 常量（整数）
+                        self.CS_num += 1
+            elif self.state == HEX: # 十六进制数
+                self.token += self.ch
+                self.read_char()
+                if self.ch.isdigit() or self.ch in "abcdefABCDEF":
+                    self.state = HEX
                 else:
                     self.retract()
-                    self.write_token(CS) # 常量（整数）
+                    self.write_token(CS) # 常量（十六进制整数）
                     self.CS_num += 1
             elif self.state == DOT: # 小数点状态
                 self.token += self.ch

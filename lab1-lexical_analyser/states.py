@@ -25,3 +25,4 @@ EXCLAIM = 22        # !
 BCOMMENT = 23       # 多行注释/**/ BlockCOMMENT
 LCOMMENT = 24       # 单行注释 //  LineCOMMENT
 MODULO = 25         # %
+HEX = 26            # 十六进制数状态
