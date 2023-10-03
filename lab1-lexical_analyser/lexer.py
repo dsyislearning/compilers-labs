@@ -28,8 +28,8 @@ class LexicalAnalyzer:
         """词法分析过程"""
         print_info()
         # 打开文件
-        self.fin = open(self.fin, 'r')
-        self.fout = open(self.fout, 'w')
+        self.fin = open(self.fin, 'r', encoding='utf-8')
+        self.fout = open(self.fout, 'w', encoding='utf-8')
         # 状态机逻辑
         while True:
             if self.state == INIT: # 初始状态
@@ -426,7 +426,7 @@ class LexicalAnalyzer:
                     self.fin.close()
                     self.fout.close()
                     self.print_result() # 打印结果
-                    exit(0)
+                    sys.exit(0)
                 else:
                     self.buffer += rd
                     self.characters += 1
