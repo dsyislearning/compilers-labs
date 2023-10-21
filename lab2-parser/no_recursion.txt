@@ -1,0 +1,10 @@
+E T F A B
++ - * / n ( )
+E
+E->E+T|E-T|T
+E->TA
+A->+TA|-TA|ε
+T->T*F|T/F|F
+T->FB
+B->*FB|/FB|ε
+F->(E)|n
