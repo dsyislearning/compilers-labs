@@ -122,6 +122,7 @@ class LRParser(Grammar):
             print()
 
     def analyze(self, s: str) -> None:
+        s = s + '$'
         state_stack = [0]
         symbol_stack = ['$']
         while True:

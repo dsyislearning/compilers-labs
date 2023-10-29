@@ -110,7 +110,6 @@ class Grammar:
                                         if 'ε' in FIRST_alpha:
                                             FOLLOW[rhs[i]].update(FOLLOW[A])
                                 elif i == len(rhs) - 1:
-                                    FOLLOW[rhs[i]].add('$')
                                     FOLLOW[rhs[i]].update(FOLLOW[A])
                 if sum([len(FOLLOW[X]) for X in FOLLOW]) > original_size:
                     expanded = True
